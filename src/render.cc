@@ -79,6 +79,9 @@ void renderLevel(SDL_Renderer* renderer, level &lvl, unordered_map <uint8_t, SDL
 	// render position text
 	if (settings.showPosition) {
 		renderText(renderer, font, postext, 10, 10);
+		if (settings.noclip) {
+			renderText(renderer, font, "Noclip ON", 10, 15 + TEXT_SIZE);
+		}
 	}
 
 	// finished rendering

@@ -43,8 +43,10 @@ int main(int argc, char** argv) {
 	SDL_Window* window = SDL_CreateWindow(winTitle.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	SDL_Event event;
+
 	// create font
 	TTF_Font* font = TTF_OpenFont(string(gamepath + "/font.ttf").c_str(), TEXT_SIZE);
+
 	bool run = true;
 	const unsigned char* keyStates;
 	gplayer player;
@@ -93,7 +95,8 @@ int main(int argc, char** argv) {
 	// generate level
 	printf("Generating world..\n");
 	level lvl;
-	generateMap(lvl, 128, 128, gamepath, renderer);
+	vec2  lvlSize = {1024, 1024};
+	generateMap(lvl, lvlSize.x, lvlSize.y, gamepath, renderer);
 	
 	printf("Loaded level\n");
 
@@ -105,6 +108,7 @@ int main(int argc, char** argv) {
 					break;
 				}
 				case SDL_KEYDOWN: {
+					// movement
 					bool playerMoved = false;
 					bool canMove     = true;
 					if (!settings.noclip) {
@@ -114,41 +118,49 @@ int main(int argc, char** argv) {
 
 					keyStates = SDL_GetKeyboardState(NULL);
 					if (keyStates[SDL_SCANCODE_W]) {
-						if ((!lvl.front_blocks[player.y-1][player.x].collision)
-						&& (player.y != 0)
-						&& !settings.noclip) {
+						if (((!lvl.front_blocks[player.y-1][player.x].collision)
+						&& (player.y != 0))
+						|| settings.noclip) {
 							playerMoved = true;
 							-- player.y;
 							-- camera.y;
 						}
 					}
 					if (keyStates[SDL_SCANCODE_A]) {
-						if ((!lvl.front_blocks[player.y][player.x-1].collision)
-						&& (player.x != 0)
-						&& !settings.noclip) {							
+						if (((!lvl.front_blocks[player.y][player.x-1].collision)
+						&& (player.x != 0))
+						|| settings.noclip) {							
 							playerMoved = true;
 							-- player.x;
 							-- camera.x;
 						}
 					}
 					if (keyStates[SDL_SCANCODE_S]) {
-						if ((!lvl.front_blocks[player.y+1][player.x].collision)
-						&& (player.y != lvl.h-1)
-						&& !settings.noclip) {
+						if (((!lvl.front_blocks[player.y+1][player.x].collision)
+						&& (player.y != lvl.h-1))
+						|| settings.noclip) {
 							playerMoved = true;
 							++ player.y;
 							++ camera.y;
 						}
 					}
 					if (keyStates[SDL_SCANCODE_D]) {
-						if ((!lvl.front_blocks[player.y][player.x+1].collision)
-						&& (player.x != lvl.w-1)
-						&& !settings.noclip) {
+						if (((!lvl.front_blocks[player.y][player.x+1].collision)
+						&& (player.x != lvl.w-1))
+						|| settings.noclip) {
 							playerMoved = true;
 							++ player.x;
 							++ camera.x;
 						}
 					}
+					// hax
+					if (keyStates[SDL_SCANCODE_X]) {
+						settings.noclip = !settings.noclip;
+					}
+					if (keyStates[SDL_SCANCODE_F3]) {
+						settings.showPosition = !settings.showPosition;
+					}
+
 					break;
 				}
 			}
