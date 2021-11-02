@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 
 	// hacks
 	settings_s settings;
-	settings.noclip       = true;
+	settings.noclip       = false;
 	settings.showPosition = true;
 
 	// config
