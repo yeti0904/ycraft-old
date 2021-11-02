@@ -11,6 +11,8 @@
 #include "player.hh"
 #include "util.hh"
 #include "vec2.hh"
+#include "generator.hh"
+#include "settings.hh"
 using std::string;
 using std::to_string;
 
@@ -37,7 +39,7 @@ int main(int argc, char** argv) {
 	printf("Starting video...\n");
 	TTF_Init();
 	SDL_Init(SDL_INIT_VIDEO); // initialize SDL2
-	string winTitle = "coingame";
+	string winTitle = "ycraft";
 	SDL_Window* window = SDL_CreateWindow(winTitle.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	SDL_Event event;
@@ -47,6 +49,11 @@ int main(int argc, char** argv) {
 	const unsigned char* keyStates;
 	gplayer player;
 	printf("Started\n");
+
+	// hacks
+	settings_s settings;
+	settings.noclip       = true;
+	settings.showPosition = true;
 
 	// config
 	SDL_RenderSetLogicalSize(renderer, 320, 240);
@@ -58,9 +65,21 @@ int main(int argc, char** argv) {
 	SDL_SetWindowIcon(window, icon);
 	printf("Set icon to %s\n", string(gamepath + "/icon.png").c_str());
 
+	// load textures
+	printf("Loading textures..\n");
+	const uint8_t textureCount = 7;
+	unordered_map <uint8_t, SDL_Texture*> textures;
+	SDL_Surface* tmpSurface;
+	for (uint8_t i  = 1; i<=textureCount; ++i) {
+		tmpSurface  = IMG_Load(string(gamepath + "/textures/" + to_string(i) + ".png").c_str());
+		textures[i] = SDL_CreateTextureFromSurface(renderer, tmpSurface);
+		SDL_FreeSurface(tmpSurface);
+	}
+
 	// create player
-	player.x = 10;
-	player.y = 7;
+	player.x       = 10;
+	player.y       = 7;
+	player.health  = 100;
 	player.surface = IMG_Load(string(gamepath + "/textures/player.png").c_str());
 	player.texture = SDL_CreateTextureFromSurface(renderer, player.surface);
 	printf("Loaded player\n");
@@ -72,20 +91,9 @@ int main(int argc, char** argv) {
 	printf("Created camera\n");
 
 	// generate level
+	printf("Generating world..\n");
 	level lvl;
-	lvl.w = 50;
-	lvl.h = 50;
-	for (uint16_t i = 0; i<lvl.h; ++i) {
-        for (uint16_t j = 0; j<lvl.w; ++j) {
-			if (rand() % 10 != 1) lvl.backLoadAt(renderer, j, i, 6, gamepath);
-			else lvl.backLoadAt(renderer, j, i, 7, gamepath);
-		}
-	}
-	for (uint16_t i = 0; i<lvl.h; ++i) {
-        for (uint16_t j = 0; j<lvl.w; ++j) {
-			if (rand() % 20 == 1) lvl.frontLoadAt(renderer, j, i, 5, gamepath);
-		}
-	}
+	generateMap(lvl, 128, 128, gamepath, renderer);
 	
 	printf("Loaded level\n");
 
@@ -98,9 +106,15 @@ int main(int argc, char** argv) {
 				}
 				case SDL_KEYDOWN: {
 					bool playerMoved = false;
+					bool canMove     = true;
+					if (!settings.noclip) {
+						if (lvl.front_blocks[player.y-1][player.x].collision)
+							canMove = false;
+					}
+
 					keyStates = SDL_GetKeyboardState(NULL);
 					if (keyStates[SDL_SCANCODE_W]) {
-						if ((!lvl.front_blocks[player.y-1][player.x].collision)
+						if ((canMove)
 						&& (player.y != 0)) {
 							playerMoved = true;
 							-- player.y;
@@ -108,7 +122,7 @@ int main(int argc, char** argv) {
 						}
 					}
 					if (keyStates[SDL_SCANCODE_A]) {
-						if ((!lvl.front_blocks[player.y][player.x-1].collision)
+						if ((canMove)
 						&& (player.x != 0)) {							
 							playerMoved = true;
 							-- player.x;
@@ -116,7 +130,7 @@ int main(int argc, char** argv) {
 						}
 					}
 					if (keyStates[SDL_SCANCODE_S]) {
-						if ((!lvl.front_blocks[player.y+1][player.x].collision)
+						if ((canMove)
 						&& (player.y != lvl.h-1)) {
 							playerMoved = true;
 							++ player.y;
@@ -124,42 +138,25 @@ int main(int argc, char** argv) {
 						}
 					}
 					if (keyStates[SDL_SCANCODE_D]) {
-						if ((!lvl.front_blocks[player.y][player.x+1].collision)
+						if ((canMove)
 						&& (player.x != lvl.w-1)) {
 							playerMoved = true;
 							++ player.x;
 							++ camera.x;
 						}
 					}
-
-					if (playerMoved) {
-						if ((lvl.front_blocks[player.y][player.x].textureID != 0) && (lvl.front_blocks[player.y][player.x].collectible)) {
-							coins += lvl.front_blocks[player.y][player.x].collectAmount;
-							printf("Gained %u coins\n", lvl.front_blocks[player.y][player.x].collectAmount);
-							lvl.frontLoadAt(renderer, player.x, player.y, 0, gamepath);
-						}
-					}
 					break;
 				}
 			}
 		}
-		render(renderer, lvl, gamepath, player, font, coins, camera);
+		renderLevel(renderer, lvl, textures, gamepath, player, font, camera, settings);
 
 		// fps limiter
 		SDL_Delay(1000/ MAX_FPS);
 	}
 	// free resources
-	for (uint16_t i = 0; i<lvl.h; ++i) {
-		for (uint16_t j = 0; j<lvl.w; ++j) {
-			SDL_DestroyTexture(lvl.back_blocks[i][j].texture);
-			SDL_FreeSurface(lvl.back_blocks[i][j].surface);
-		}
-	}
-	for (uint16_t i = 0; i<lvl.h; ++i) {
-		for (uint16_t j = 0; j<lvl.w; ++j) {
-			SDL_DestroyTexture(lvl.front_blocks[i][j].texture);
-			SDL_FreeSurface(lvl.front_blocks[i][j].surface);
-		}
+	for (uint8_t i = 0; i<textureCount; ++i) {
+		SDL_DestroyTexture(textures[i]);
 	}
 	SDL_DestroyTexture(player.texture);
 	SDL_FreeSurface(player.surface);

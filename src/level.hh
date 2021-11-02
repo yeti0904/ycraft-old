@@ -9,8 +9,6 @@ using std::to_string;
 
 struct block {
 	uint8_t textureID;
-	SDL_Surface* surface;
-	SDL_Texture* texture;
 	bool collision;
 	bool deadly;
 	bool collectible;
@@ -27,8 +25,7 @@ class level {
 	void backLoadAt(SDL_Renderer* renderer, uint16_t x, uint16_t y, uint8_t textureID, string gamepath) {
 		string imgpath;
 		imgpath = gamepath + "/textures/" + to_string(textureID) + ".png";
-		back_blocks[y][x].surface = IMG_Load(imgpath.c_str());
-		back_blocks[y][x].texture = SDL_CreateTextureFromSurface(renderer, back_blocks[y][x].surface);
+		back_blocks[y][x].textureID = textureID;
 	}
 
 	void frontLoadAt(SDL_Renderer* renderer, uint16_t x, uint16_t y, uint8_t textureID, string gamepath) {
@@ -57,18 +54,12 @@ class level {
 				break;
 			}
 			case 5: {
-				// moneybag
-				front_blocks[y][x].collision     = false;
-				front_blocks[y][x].collectible   = true;
-				front_blocks[y][x].collectAmount = 100;
+				// rock
+				front_blocks[y][x].collision     = true;
 				break;
 			}
 		}
 
 		front_blocks[y][x].textureID = textureID;
-		if (textureID != 0) {
-			front_blocks[y][x].surface = IMG_Load(imgpath.c_str());
-			front_blocks[y][x].texture = SDL_CreateTextureFromSurface(renderer, front_blocks[y][x].surface);
-		}
 	}
 };
