@@ -114,32 +114,36 @@ int main(int argc, char** argv) {
 
 					keyStates = SDL_GetKeyboardState(NULL);
 					if (keyStates[SDL_SCANCODE_W]) {
-						if ((canMove)
-						&& (player.y != 0)) {
+						if ((!lvl.front_blocks[player.y-1][player.x].collision)
+						&& (player.y != 0)
+						&& !settings.noclip) {
 							playerMoved = true;
 							-- player.y;
 							-- camera.y;
 						}
 					}
 					if (keyStates[SDL_SCANCODE_A]) {
-						if ((canMove)
-						&& (player.x != 0)) {							
+						if ((!lvl.front_blocks[player.y][player.x-1].collision)
+						&& (player.x != 0)
+						&& !settings.noclip) {							
 							playerMoved = true;
 							-- player.x;
 							-- camera.x;
 						}
 					}
 					if (keyStates[SDL_SCANCODE_S]) {
-						if ((canMove)
-						&& (player.y != lvl.h-1)) {
+						if ((!lvl.front_blocks[player.y+1][player.x].collision)
+						&& (player.y != lvl.h-1)
+						&& !settings.noclip) {
 							playerMoved = true;
 							++ player.y;
 							++ camera.y;
 						}
 					}
 					if (keyStates[SDL_SCANCODE_D]) {
-						if ((canMove)
-						&& (player.x != lvl.w-1)) {
+						if ((!lvl.front_blocks[player.y][player.x+1].collision)
+						&& (player.x != lvl.w-1)
+						&& !settings.noclip) {
 							playerMoved = true;
 							++ player.x;
 							++ camera.x;
