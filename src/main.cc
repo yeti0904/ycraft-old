@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <string>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -38,9 +39,14 @@ int main(int argc, char** argv) {
 	}*/
 	printf("Starting video...\n");
 	TTF_Init();
-	SDL_Init(SDL_INIT_VIDEO); // initialize SDL2
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) { // initialize SDL2
+		printf("Video initialization error: %s\n", SDL_GetError());
+	}
 	string winTitle = "ycraft";
 	SDL_Window* window = SDL_CreateWindow(winTitle.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	if (window == NULL) {
+		printf("Failed to create window: %s\n", SDL_GetError());
+	}
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	SDL_Event event;
 
@@ -57,9 +63,14 @@ int main(int argc, char** argv) {
 	settings.noclip       = false;
 	settings.showPosition = true;
 
+	// chat
+	vector <string> chat = {"", "", "", "", ""};
+	bool chatShow = true;
+	chat.push_back("Welcome to ycraft");
+
 	// config
-	SDL_RenderSetLogicalSize(renderer, 320, 240);
-	printf("Set resolution to 320x240\n");
+	SDL_RenderSetLogicalSize(renderer, SCR_X, SCR_Y);
+	printf("Set resolution to %ix%i\n", SCR_X, SCR_Y);
 
 	// window icon
 	SDL_Surface* icon;
@@ -69,7 +80,7 @@ int main(int argc, char** argv) {
 
 	// load textures
 	printf("Loading textures..\n");
-	const uint8_t textureCount = 7;
+	const uint8_t textureCount = 8;
 	unordered_map <uint8_t, SDL_Texture*> textures;
 	SDL_Surface* tmpSurface;
 	for (uint8_t i  = 1; i<=textureCount; ++i) {
@@ -79,12 +90,13 @@ int main(int argc, char** argv) {
 	}
 
 	// create player
-	player.x       = 10;
-	player.y       = 7;
+	player.x       = round((SCR_X / BLOCK_SIZE) / 2);
+	player.y       = round((SCR_Y / BLOCK_SIZE) / 2);
 	player.health  = 100;
 	player.surface = IMG_Load(string(gamepath + "/textures/player.png").c_str());
 	player.texture = SDL_CreateTextureFromSurface(renderer, player.surface);
 	printf("Loaded player\n");
+	printf("Spawn point: %i, %i\n", player.x, player.y);
 
 	// create camera
 	vec2 camera;
@@ -95,8 +107,8 @@ int main(int argc, char** argv) {
 	// generate level
 	printf("Generating world..\n");
 	level lvl;
-	vec2  lvlSize = {1024, 1024};
-	generateMap(lvl, lvlSize.x, lvlSize.y, gamepath, renderer);
+	vec2  lvlSize = {128, 128};
+	generateMap(lvl, lvlSize.x, lvlSize.y);
 	
 	printf("Loaded level\n");
 
@@ -160,15 +172,24 @@ int main(int argc, char** argv) {
 					if (keyStates[SDL_SCANCODE_F3]) {
 						settings.showPosition = !settings.showPosition;
 					}
+					// chat
+					if (keyStates[SDL_SCANCODE_T]) {
+						chatShow = !chatShow;
+					}
 
 					break;
 				}
 			}
 		}
-		renderLevel(renderer, lvl, textures, gamepath, player, font, camera, settings);
+		renderLevel(renderer, lvl, textures, gamepath, player, camera);
+		renderText(renderer, font, player, settings);
+		if (chatShow) {
+			renderChat(renderer, font, chat);
+		}
+		SDL_RenderPresent(renderer);
 
 		// fps limiter
-		SDL_Delay(1000/ MAX_FPS);
+		//SDL_Delay(1000/ MAX_FPS);
 	}
 	// free resources
 	for (uint8_t i = 0; i<textureCount; ++i) {
@@ -178,7 +199,7 @@ int main(int argc, char** argv) {
 	SDL_FreeSurface(player.surface);
 	SDL_FreeSurface(icon);
 
-	printf("Exiting\n");
+	printf("\rExiting\n");
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
 	TTF_CloseFont(font);

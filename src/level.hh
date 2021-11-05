@@ -22,15 +22,11 @@ class level {
 	unordered_map <uint16_t, unordered_map <uint16_t, block>> back_blocks;
 	unordered_map <uint16_t, unordered_map <uint16_t, block>> front_blocks;
 
-	void backLoadAt(SDL_Renderer* renderer, uint16_t x, uint16_t y, uint8_t textureID, string gamepath) {
-		string imgpath;
-		imgpath = gamepath + "/textures/" + to_string(textureID) + ".png";
+	void backLoadAt(uint16_t x, uint16_t y, uint8_t textureID) {
 		back_blocks[y][x].textureID = textureID;
 	}
 
-	void frontLoadAt(SDL_Renderer* renderer, uint16_t x, uint16_t y, uint8_t textureID, string gamepath) {
-		string imgpath;
-		imgpath = gamepath + "/textures/" + to_string(textureID) + ".png";
+	void frontLoadAt(uint16_t x, uint16_t y, uint8_t textureID) {
 		// block properties
 		switch (textureID) {
 			case 1: {

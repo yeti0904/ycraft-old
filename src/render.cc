@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
@@ -8,9 +9,10 @@
 #include "vec2.hh"
 #include "settings.hh"
 using std::string;
+using std::vector;
 using std::to_string;
 
-void renderText(SDL_Renderer* renderer, TTF_Font* font, string text, size_t x, size_t y) {
+void rendertext(SDL_Renderer* renderer, TTF_Font* font, string text, size_t x, size_t y) {
 	SDL_Rect rect;
 	SDL_Color colour = {0, 0, 0};
 	SDL_Surface* textsurface = TTF_RenderText_Solid(font, text.c_str(), colour);
@@ -30,14 +32,10 @@ void renderText(SDL_Renderer* renderer, TTF_Font* font, string text, size_t x, s
 	SDL_FreeSurface(textsurface);
 }
 
-void renderLevel(SDL_Renderer* renderer, level &lvl, unordered_map <uint8_t, SDL_Texture*> &textures, string &gamepath, gplayer &player, TTF_Font* font, vec2 &camera, settings_s settings) {
+void renderLevel(SDL_Renderer* renderer, level &lvl, unordered_map <uint8_t, SDL_Texture*> &textures, string &gamepath, gplayer &player, vec2 &camera) {
 	SDL_Rect rect;
 	string imgpath;
-	string healthtext = "Health: " + to_string(player.health) + "%";
-	string postext    = "Position: (" + to_string(player.x) + ", " + to_string(player.y) + ")";
 	SDL_Color colour = {0, 0, 0};
-	SDL_Surface* textsurface;
-	SDL_Texture* texttexture;
 	rect.w = BLOCK_SIZE;
 	rect.h = BLOCK_SIZE;
 
@@ -47,8 +45,8 @@ void renderLevel(SDL_Renderer* renderer, level &lvl, unordered_map <uint8_t, SDL
 
 	uint16_t maxX;
 	uint16_t maxY;
-	maxX = camera.x + (320 / BLOCK_SIZE);
-	maxY = camera.y + (240 / BLOCK_SIZE);
+	maxX = camera.x + (SCR_X / BLOCK_SIZE);
+	maxY = camera.y + (SCR_Y / BLOCK_SIZE);
 
 	// handle back layer
 	for (int16_t i = camera.y; i<maxY; ++i) {
@@ -73,17 +71,40 @@ void renderLevel(SDL_Renderer* renderer, level &lvl, unordered_map <uint8_t, SDL
 	rect.x = (player.x - camera.x) * BLOCK_SIZE;
 	rect.y = (player.y - camera.y) * BLOCK_SIZE;
 	SDL_RenderCopy(renderer, player.texture, NULL, &rect);
+}
+
+void renderText(SDL_Renderer* renderer, TTF_Font* font, gplayer player, settings_s settings) {
+	string healthtext = "Health: " + to_string(player.health) + "%";
+	string postext    = "Position: (" + to_string(player.x) + ", " + to_string(player.y) + ")";
 
 	// render health text
-	renderText(renderer, font, healthtext, 10, 220);
+	rendertext(renderer, font, healthtext, 10, SCR_Y - 10 - TEXT_SIZE);
 	// render position text
 	if (settings.showPosition) {
-		renderText(renderer, font, postext, 10, 10);
+		rendertext(renderer, font, postext, 10, 10);
 		if (settings.noclip) {
-			renderText(renderer, font, "Noclip ON", 10, 15 + TEXT_SIZE);
+			rendertext(renderer, font, "Noclip ON", 10, 15 + TEXT_SIZE);
 		}
 	}
+}
 
-	// finished rendering
-	SDL_RenderPresent(renderer);
+void renderChat(SDL_Renderer* renderer, TTF_Font* font, vector <string> chat) {
+	// create background
+	SDL_Rect rect;
+	rect.x = 5;
+	rect.y = SCR_Y - 40 - (5 * TEXT_SIZE);
+	uint16_t longest = 0;
+	for (uint8_t i = 0; i<5; ++i) {
+		if (chat[chat.size()-1-i].length() > longest)
+			longest = chat[chat.size()-1-i].length();
+	}
+	rect.w = ((longest * TEXT_SIZE) / 2) + 10;
+	rect.h = 5 * TEXT_SIZE;
+
+	// render
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);
+	SDL_RenderFillRect(renderer, &rect);
+	for (uint8_t i = 0; i<5; ++i) {
+		rendertext(renderer, font, chat[chat.size()-1-i], 10, SCR_Y - 40 - TEXT_SIZE - (i*10));
+	}
 }
