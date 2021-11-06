@@ -22,6 +22,8 @@ void rendertext(SDL_Renderer* renderer, TTF_Font* font, string text, size_t x, s
 	rect.h = TEXT_SIZE;
 	rect.w = (text.length() * TEXT_SIZE) / 2;
 	SDL_RenderCopy(renderer, texttexture, NULL, &rect);
+	SDL_FreeSurface(textsurface);
+	SDL_DestroyTexture(texttexture);
 	rect.x -= 1;
 	rect.y -= 1;
 	colour = {255, 255, 255};
