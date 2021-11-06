@@ -14,6 +14,7 @@
 #include "vec2.hh"
 #include "generator.hh"
 #include "settings.hh"
+#include "event.hh"
 using std::string;
 using std::to_string;
 
@@ -62,10 +63,10 @@ int main(int argc, char** argv) {
 	settings_s settings;
 	settings.noclip       = false;
 	settings.showPosition = true;
+	settings.showChat     = false;
 
 	// chat
 	vector <string> chat = {"", "", "", "", ""};
-	bool chatShow = true;
 	chat.push_back("Welcome to ycraft");
 
 	// config
@@ -113,84 +114,18 @@ int main(int argc, char** argv) {
 	printf("Loaded level\n");
 
 	while (run) {
-		while (SDL_PollEvent(&event)) {
-			switch (event.type) {
-				case SDL_QUIT: {
-					run = false;
-					break;
-				}
-				case SDL_KEYDOWN: {
-					// movement
-					bool playerMoved = false;
-					bool canMove     = true;
-					if (!settings.noclip) {
-						if (lvl.front_blocks[player.y-1][player.x].collision)
-							canMove = false;
-					}
+		// event
+		handleEvent(event, run, keyStates, settings, player, camera, lvl, window);
 
-					keyStates = SDL_GetKeyboardState(NULL);
-					if (keyStates[SDL_SCANCODE_W]) {
-						if (((!lvl.front_blocks[player.y-1][player.x].collision)
-						&& (player.y != 0))
-						|| settings.noclip) {
-							playerMoved = true;
-							-- player.y;
-							-- camera.y;
-						}
-					}
-					if (keyStates[SDL_SCANCODE_A]) {
-						if (((!lvl.front_blocks[player.y][player.x-1].collision)
-						&& (player.x != 0))
-						|| settings.noclip) {							
-							playerMoved = true;
-							-- player.x;
-							-- camera.x;
-						}
-					}
-					if (keyStates[SDL_SCANCODE_S]) {
-						if (((!lvl.front_blocks[player.y+1][player.x].collision)
-						&& (player.y != lvl.h-1))
-						|| settings.noclip) {
-							playerMoved = true;
-							++ player.y;
-							++ camera.y;
-						}
-					}
-					if (keyStates[SDL_SCANCODE_D]) {
-						if (((!lvl.front_blocks[player.y][player.x+1].collision)
-						&& (player.x != lvl.w-1))
-						|| settings.noclip) {
-							playerMoved = true;
-							++ player.x;
-							++ camera.x;
-						}
-					}
-					// hax
-					if (keyStates[SDL_SCANCODE_X]) {
-						settings.noclip = !settings.noclip;
-					}
-					if (keyStates[SDL_SCANCODE_F3]) {
-						settings.showPosition = !settings.showPosition;
-					}
-					// chat
-					if (keyStates[SDL_SCANCODE_T]) {
-						chatShow = !chatShow;
-					}
-
-					break;
-				}
-			}
-		}
 		renderLevel(renderer, lvl, textures, gamepath, player, camera);
 		renderText(renderer, font, player, settings);
-		if (chatShow) {
+		if (settings.showChat) {
 			renderChat(renderer, font, chat);
 		}
 		SDL_RenderPresent(renderer);
-
-		// fps limiter
-		//SDL_Delay(1000/ MAX_FPS);
 	}
+
+
 	// free resources
 	for (uint8_t i = 0; i<textureCount; ++i) {
 		SDL_DestroyTexture(textures[i]);
