@@ -15,17 +15,12 @@ void handleEvent(SDL_Event& event, bool &run, const unsigned char* keyStates, se
 			case SDL_KEYDOWN: {
 				// movement
 				bool playerMoved = false;
-				bool canMove     = true;
-				if (!settings.noclip) {
-					if (lvl.front_blocks[player.y-1][player.x].collision)
-						canMove = false;
-				}
 
 				keyStates = SDL_GetKeyboardState(NULL);
 				if (keyStates[SDL_SCANCODE_W]) {
 					if (((!lvl.front_blocks[player.y-1][player.x].collision)
 					&& (player.y != 0))
-					|| settings.noclip) {
+					|| (settings.noclip && (player.y != 0))) {
 						playerMoved = true;
 						-- player.y;
 						-- camera.y;
@@ -34,7 +29,7 @@ void handleEvent(SDL_Event& event, bool &run, const unsigned char* keyStates, se
 				if (keyStates[SDL_SCANCODE_A]) {
 					if (((!lvl.front_blocks[player.y][player.x-1].collision)
 					&& (player.x != 0))
-					|| settings.noclip) {							
+					|| (settings.noclip && (player.x != 0))) {							
 						playerMoved = true;
 						-- player.x;
 						-- camera.x;

@@ -40,6 +40,7 @@ int main(int argc, char** argv) {
 	}*/
 	printf("Starting video...\n");
 	TTF_Init();
+	IMG_Init(IMG_INIT_PNG);
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) { // initialize SDL2
 		printf("Video initialization error: %s\n", SDL_GetError());
 	}
@@ -140,5 +141,6 @@ int main(int argc, char** argv) {
 	TTF_CloseFont(font);
 	SDL_Quit();
 	TTF_Quit();
+	IMG_Quit();
 	return 0;
 }
